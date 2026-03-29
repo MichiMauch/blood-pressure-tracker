@@ -1,0 +1,23 @@
+{
+  "name": "Blutdruck Tracker",
+  "short_name": "BP Tracker",
+  "description": "Persoenlicher Blutdruck-Tracker mit Grafiken und Auswertungen",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#2a8fad",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
