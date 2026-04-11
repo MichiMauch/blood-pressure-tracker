@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
 
 interface MeasurementValues {
   systolic: string;
@@ -24,10 +23,18 @@ export function MeasurementForm({
   values,
   onChange,
 }: MeasurementFormProps) {
+  const sysRef = useRef<HTMLInputElement>(null);
+  const diaRef = useRef<HTMLInputElement>(null);
+  const pulseRef = useRef<HTMLInputElement>(null);
+
   const update = (field: keyof MeasurementValues, value: string) => {
-    // Only allow numbers
     if (value && !/^\d*$/.test(value)) return;
     onChange({ ...values, [field]: value });
+    if (field === "systolic" && value.length === 3) {
+      diaRef.current?.focus();
+    } else if (field === "diastolic" && value.length === 2) {
+      pulseRef.current?.focus();
+    }
   };
 
   return (
@@ -41,6 +48,7 @@ export function MeasurementForm({
             Systolisch
           </Label>
           <Input
+            ref={sysRef}
             id={`${idPrefix}-sys`}
             type="tel"
             inputMode="numeric"
@@ -49,6 +57,7 @@ export function MeasurementForm({
             onChange={(e) => update("systolic", e.target.value)}
             className="h-14 text-center text-2xl font-bold tabular-nums"
             maxLength={3}
+            autoFocus
           />
           <p className="text-center text-[10px] text-muted-foreground">mmHg</p>
         </div>
@@ -57,6 +66,7 @@ export function MeasurementForm({
             Diastolisch
           </Label>
           <Input
+            ref={diaRef}
             id={`${idPrefix}-dia`}
             type="tel"
             inputMode="numeric"
@@ -73,6 +83,7 @@ export function MeasurementForm({
             Puls
           </Label>
           <Input
+            ref={pulseRef}
             id={`${idPrefix}-pulse`}
             type="tel"
             inputMode="numeric"
