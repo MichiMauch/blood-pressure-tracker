@@ -17,6 +17,12 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Allow API access with API key
+  const apiKey = request.headers.get("Authorization")?.replace("Bearer ", "");
+  if (apiKey && apiKey === process.env.API_KEY) {
+    return NextResponse.next();
+  }
+
   const token = request.cookies.get(COOKIE_NAME)?.value;
   if (!token) {
     return NextResponse.redirect(new URL("/login", request.url));
