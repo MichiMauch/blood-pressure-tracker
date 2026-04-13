@@ -105,6 +105,7 @@ export async function POST(request: NextRequest) {
         id: newId,
         date: body.date,
         time: body.time,
+        timestamp: body.timestamp,
         systolicAvg: body.systolicAvg,
         diastolicAvg: body.diastolicAvg,
         pulseAvg: body.pulseAvg,
