@@ -89,5 +89,29 @@ export async function POST(request: NextRequest) {
     note: body.note ?? null,
   });
 
-  return Response.json({ id: result.lastInsertRowid }, { status: 201 });
+  const newId = Number(result.lastInsertRowid);
+
+  // Fire-and-forget webhook to Flux
+  const fluxWebhook = process.env.FLUX_WEBHOOK_URL;
+  const apiKey = process.env.API_KEY;
+  if (fluxWebhook && apiKey) {
+    fetch(fluxWebhook, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        id: newId,
+        date: body.date,
+        time: body.time,
+        systolicAvg: body.systolicAvg,
+        diastolicAvg: body.diastolicAvg,
+        pulseAvg: body.pulseAvg,
+        note: body.note ?? null,
+      }),
+    }).catch((e) => console.warn("Flux webhook failed:", e));
+  }
+
+  return Response.json({ id: newId }, { status: 201 });
 }
