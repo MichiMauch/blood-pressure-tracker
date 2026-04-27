@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "embedded",
+  "dolt_database": "blood_pressure_tracker",
+  "project_id": "75cf2538-16bb-4ae1-8718-6aea53b875c9"
+}
