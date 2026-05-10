@@ -2,7 +2,7 @@
 
 import type { MeasurementSession } from "@/lib/types";
 import { BpCategoryBadge } from "./bp-category-badge";
-import { formatTimeOfDay } from "@/lib/calculations";
+import { formatTimeOfDay, getBetterMeasurement } from "@/lib/calculations";
 import { Card } from "@/components/ui/card";
 import { Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -18,6 +18,9 @@ export function MeasurementCard({
   onDelete,
   compact = false,
 }: MeasurementCardProps) {
+  const better = getBetterMeasurement(session);
+  const m1Better = better.which === 1;
+
   return (
     <Card className={cn("p-4", compact && "p-3")}>
       <div className="flex items-start justify-between gap-3">
@@ -30,35 +33,92 @@ export function MeasurementCard({
               {formatTimeOfDay(session.timeOfDay)}
             </span>
             <BpCategoryBadge
-              systolic={session.systolicAvg}
-              diastolic={session.diastolicAvg}
+              systolic={better.systolic}
+              diastolic={better.diastolic}
             />
           </div>
 
-          <div className="flex items-baseline gap-1">
-            <span className="text-3xl font-bold tabular-nums">
-              {session.systolicAvg}
-            </span>
-            <span className="text-lg text-muted-foreground">/</span>
-            <span className="text-3xl font-bold tabular-nums">
-              {session.diastolicAvg}
-            </span>
-            <span className="ml-1 text-sm text-muted-foreground">mmHg</span>
-            <span className="ml-3 text-lg tabular-nums text-muted-foreground">
-              {session.pulseAvg} bpm
-            </span>
-          </div>
-
-          {!compact && (
-            <div className="flex gap-4 text-xs text-muted-foreground">
-              <span>
-                1: {session.systolic1}/{session.diastolic1} ({session.pulse1})
-              </span>
-              <span>
-                2: {session.systolic2}/{session.diastolic2} ({session.pulse2})
-              </span>
+          <div className="grid grid-cols-2 gap-3">
+            <div
+              className={cn(
+                "rounded-md border p-2",
+                m1Better ? "border-primary/40 bg-primary/5" : "border-border"
+              )}
+            >
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                Messung 1
+              </div>
+              <div className="flex items-baseline gap-1">
+                <span
+                  className={cn(
+                    "text-2xl tabular-nums",
+                    m1Better ? "font-bold" : "font-normal text-muted-foreground"
+                  )}
+                >
+                  {session.systolic1}
+                </span>
+                <span className="text-sm text-muted-foreground">/</span>
+                <span
+                  className={cn(
+                    "text-2xl tabular-nums",
+                    m1Better ? "font-bold" : "font-normal text-muted-foreground"
+                  )}
+                >
+                  {session.diastolic1}
+                </span>
+              </div>
+              <div
+                className={cn(
+                  "text-xs tabular-nums",
+                  m1Better ? "font-semibold" : "text-muted-foreground"
+                )}
+              >
+                {session.pulse1} bpm
+              </div>
             </div>
-          )}
+
+            <div
+              className={cn(
+                "rounded-md border p-2",
+                !m1Better ? "border-primary/40 bg-primary/5" : "border-border"
+              )}
+            >
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                Messung 2
+              </div>
+              <div className="flex items-baseline gap-1">
+                <span
+                  className={cn(
+                    "text-2xl tabular-nums",
+                    !m1Better
+                      ? "font-bold"
+                      : "font-normal text-muted-foreground"
+                  )}
+                >
+                  {session.systolic2}
+                </span>
+                <span className="text-sm text-muted-foreground">/</span>
+                <span
+                  className={cn(
+                    "text-2xl tabular-nums",
+                    !m1Better
+                      ? "font-bold"
+                      : "font-normal text-muted-foreground"
+                  )}
+                >
+                  {session.diastolic2}
+                </span>
+              </div>
+              <div
+                className={cn(
+                  "text-xs tabular-nums",
+                  !m1Better ? "font-semibold" : "text-muted-foreground"
+                )}
+              >
+                {session.pulse2} bpm
+              </div>
+            </div>
+          </div>
 
           {session.note && (
             <p className="text-xs text-muted-foreground italic">

@@ -9,7 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { addMeasurement } from "@/hooks/use-measurements";
-import { avg } from "@/lib/calculations";
+import { avg, getBetterMeasurement } from "@/lib/calculations";
 import { ArrowRight, ArrowLeft, Check, Sun, Moon, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -66,6 +66,16 @@ export default function NewMeasurementPage() {
   const sysAvg = avg(sys1, sys2);
   const diaAvg = avg(dia1, dia2);
   const pulAvg = avg(pul1, pul2);
+
+  const better = getBetterMeasurement({
+    systolic1: sys1,
+    diastolic1: dia1,
+    pulse1: pul1,
+    systolic2: sys2,
+    diastolic2: dia2,
+    pulse2: pul2,
+  });
+  const m1Better = better.which === 1;
 
   async function handleSave() {
     setSaving(true);
@@ -160,37 +170,104 @@ export default function NewMeasurementPage() {
         <div className="space-y-4">
           <Card>
             <CardContent className="pt-6 space-y-4">
-              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-                Zusammenfassung
-              </h3>
-
-              <div className="flex items-center gap-3">
-                <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-bold tabular-nums">
-                    {sysAvg}
-                  </span>
-                  <span className="text-xl text-muted-foreground">/</span>
-                  <span className="text-4xl font-bold tabular-nums">
-                    {diaAvg}
-                  </span>
-                  <span className="ml-1 text-sm text-muted-foreground">
-                    mmHg
-                  </span>
-                </div>
-                <BpCategoryBadge systolic={sysAvg} diastolic={diaAvg} />
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                  Zusammenfassung
+                </h3>
+                <BpCategoryBadge
+                  systolic={better.systolic}
+                  diastolic={better.diastolic}
+                />
               </div>
 
-              <p className="text-lg tabular-nums text-muted-foreground">
-                Puls: {pulAvg} bpm
-              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <div
+                  className={cn(
+                    "rounded-md border p-3",
+                    m1Better
+                      ? "border-primary/40 bg-primary/5"
+                      : "border-border"
+                  )}
+                >
+                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    Messung 1
+                  </div>
+                  <div className="flex items-baseline gap-1">
+                    <span
+                      className={cn(
+                        "text-3xl tabular-nums",
+                        m1Better
+                          ? "font-bold"
+                          : "font-normal text-muted-foreground"
+                      )}
+                    >
+                      {sys1}
+                    </span>
+                    <span className="text-base text-muted-foreground">/</span>
+                    <span
+                      className={cn(
+                        "text-3xl tabular-nums",
+                        m1Better
+                          ? "font-bold"
+                          : "font-normal text-muted-foreground"
+                      )}
+                    >
+                      {dia1}
+                    </span>
+                  </div>
+                  <div
+                    className={cn(
+                      "text-sm tabular-nums",
+                      m1Better ? "font-semibold" : "text-muted-foreground"
+                    )}
+                  >
+                    {pul1} bpm
+                  </div>
+                </div>
 
-              <div className="flex gap-4 text-xs text-muted-foreground">
-                <span>
-                  Messung 1: {sys1}/{dia1} ({pul1})
-                </span>
-                <span>
-                  Messung 2: {sys2}/{dia2} ({pul2})
-                </span>
+                <div
+                  className={cn(
+                    "rounded-md border p-3",
+                    !m1Better
+                      ? "border-primary/40 bg-primary/5"
+                      : "border-border"
+                  )}
+                >
+                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    Messung 2
+                  </div>
+                  <div className="flex items-baseline gap-1">
+                    <span
+                      className={cn(
+                        "text-3xl tabular-nums",
+                        !m1Better
+                          ? "font-bold"
+                          : "font-normal text-muted-foreground"
+                      )}
+                    >
+                      {sys2}
+                    </span>
+                    <span className="text-base text-muted-foreground">/</span>
+                    <span
+                      className={cn(
+                        "text-3xl tabular-nums",
+                        !m1Better
+                          ? "font-bold"
+                          : "font-normal text-muted-foreground"
+                      )}
+                    >
+                      {dia2}
+                    </span>
+                  </div>
+                  <div
+                    className={cn(
+                      "text-sm tabular-nums",
+                      !m1Better ? "font-semibold" : "text-muted-foreground"
+                    )}
+                  >
+                    {pul2} bpm
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>

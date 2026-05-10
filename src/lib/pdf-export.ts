@@ -1,6 +1,6 @@
 import jsPDF from "jspdf";
 import type { MeasurementSession } from "./types";
-import { computeStats } from "./calculations";
+import { computeStats, getBetterMeasurement } from "./calculations";
 import { getBpCategory } from "./bp-categories";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
@@ -59,9 +59,9 @@ export async function generatePdfReport(
 
     const statRows = [
       ["Anzahl Messungen", `${stats.count}`],
-      ["Durchschnitt Systolisch", `${stats.avgSystolic} mmHg`],
-      ["Durchschnitt Diastolisch", `${stats.avgDiastolic} mmHg`],
-      ["Durchschnitt Puls", `${stats.avgPulse} bpm`],
+      ["Mittel Systolisch (beste Messung)", `${stats.avgSystolic} mmHg`],
+      ["Mittel Diastolisch (beste Messung)", `${stats.avgDiastolic} mmHg`],
+      ["Mittel Puls (beste Messung)", `${stats.avgPulse} bpm`],
       ["Bereich Systolisch", `${stats.minSystolic} - ${stats.maxSystolic} mmHg`],
       ["Bereich Diastolisch", `${stats.minDiastolic} - ${stats.maxDiastolic} mmHg`],
     ];
@@ -101,17 +101,16 @@ export async function generatePdfReport(
   const colDate = margin;
   const colTime = margin + 23;
   const colTod = margin + 37;
-  const colM1 = margin + 54;
-  const colM2 = margin + 86;
-  const colAvg = margin + 118;
-  const colCat = margin + 148;
+  const colM1 = margin + 60;
+  const colM2 = margin + 100;
+  const colCat = margin + 140;
 
   // Group header row (Messung 1 / Messung 2)
   doc.setFontSize(7);
   doc.setFont("helvetica", "bold");
   doc.setFillColor(230, 240, 250);
-  doc.rect(colM1 - 1, y - 1, 30, 5, "F");
-  doc.rect(colM2 - 1, y - 1, 30, 5, "F");
+  doc.rect(colM1 - 1, y - 1, 38, 5, "F");
+  doc.rect(colM2 - 1, y - 1, 38, 5, "F");
   doc.setTextColor(80);
   doc.text("Messung 1", colM1, y + 2.5);
   doc.text("Messung 2", colM2, y + 2.5);
@@ -126,17 +125,16 @@ export async function generatePdfReport(
   doc.text("Zeit", colTime + 1, y + 3);
   doc.text("Tagesz.", colTod + 1, y + 3);
   doc.text("Sys/Dia", colM1, y + 3);
-  doc.text("Puls", colM1 + 22, y + 3);
+  doc.text("Puls", colM1 + 26, y + 3);
   doc.text("Sys/Dia", colM2, y + 3);
-  doc.text("Puls", colM2 + 22, y + 3);
-  doc.text("Durchschn.", colAvg, y + 3);
+  doc.text("Puls", colM2 + 26, y + 3);
   doc.text("Kategorie", colCat, y + 3);
 
   // Vertical separators for group headers
   doc.setDrawColor(200);
   doc.line(colM1 - 1.5, y - 7, colM1 - 1.5, y + 4.5);
   doc.line(colM2 - 1.5, y - 1, colM2 - 1.5, y + 4.5);
-  doc.line(colAvg - 1.5, y - 1, colAvg - 1.5, y + 4.5);
+  doc.line(colCat - 1.5, y - 1, colCat - 1.5, y + 4.5);
   y += 7;
 
   doc.setFont("helvetica", "normal");
@@ -151,7 +149,9 @@ export async function generatePdfReport(
       y = margin;
     }
 
-    const cat = getBpCategory(s.systolicAvg, s.diastolicAvg);
+    const better = getBetterMeasurement(s);
+    const m1Better = better.which === 1;
+    const cat = getBpCategory(better.systolic, better.diastolic);
     const todLabel =
       s.timeOfDay === "morning"
         ? "Morgens"
@@ -171,27 +171,26 @@ export async function generatePdfReport(
     doc.setTextColor(100);
     doc.text(todLabel, colTod + 1, y + 3);
 
-    // Messung 1
-    doc.setTextColor(30);
+    // Messung 1 (bold if better)
+    doc.setFont("helvetica", m1Better ? "bold" : "normal");
+    doc.setTextColor(m1Better ? 0 : 80);
     doc.text(`${s.systolic1}/${s.diastolic1}`, colM1, y + 3);
-    doc.setTextColor(100);
-    doc.text(`${s.pulse1}`, colM1 + 22, y + 3);
+    doc.setFont("helvetica", m1Better ? "bold" : "normal");
+    doc.setTextColor(m1Better ? 0 : 110);
+    doc.text(`${s.pulse1}`, colM1 + 26, y + 3);
 
-    // Messung 2
-    doc.setTextColor(30);
+    // Messung 2 (bold if better)
+    doc.setFont("helvetica", !m1Better ? "bold" : "normal");
+    doc.setTextColor(!m1Better ? 0 : 80);
     doc.text(`${s.systolic2}/${s.diastolic2}`, colM2, y + 3);
-    doc.setTextColor(100);
-    doc.text(`${s.pulse2}`, colM2 + 22, y + 3);
+    doc.setFont("helvetica", !m1Better ? "bold" : "normal");
+    doc.setTextColor(!m1Better ? 0 : 110);
+    doc.text(`${s.pulse2}`, colM2 + 26, y + 3);
 
-    // Average (bold)
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(0);
-    doc.text(`${s.systolicAvg}/${s.diastolicAvg}`, colAvg, y + 3);
+    // Reset for category
     doc.setFont("helvetica", "normal");
-    doc.setTextColor(100);
-    doc.text(`${s.pulseAvg}`, colAvg + 22, y + 3);
 
-    // Category with colored dot
+    // Category with colored dot (based on better measurement)
     const dotY = y + 2;
     doc.setFillColor(
       parseInt(cat.color.slice(1, 3), 16),

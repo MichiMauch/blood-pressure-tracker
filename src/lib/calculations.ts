@@ -12,6 +12,44 @@ export function avg(a: number, b: number): number {
   return Math.round((a + b) / 2);
 }
 
+export type BetterIndex = 1 | 2;
+
+export interface BetterMeasurement {
+  which: BetterIndex;
+  systolic: number;
+  diastolic: number;
+  pulse: number;
+}
+
+export function getBetterMeasurement(
+  s: Pick<
+    MeasurementSession,
+    | "systolic1"
+    | "diastolic1"
+    | "pulse1"
+    | "systolic2"
+    | "diastolic2"
+    | "pulse2"
+  >
+): BetterMeasurement {
+  const m1Wins =
+    s.systolic1 < s.systolic2 ||
+    (s.systolic1 === s.systolic2 && s.diastolic1 <= s.diastolic2);
+  return m1Wins
+    ? {
+        which: 1,
+        systolic: s.systolic1,
+        diastolic: s.diastolic1,
+        pulse: s.pulse1,
+      }
+    : {
+        which: 2,
+        systolic: s.systolic2,
+        diastolic: s.diastolic2,
+        pulse: s.pulse2,
+      };
+}
+
 export function filterByDays(
   sessions: MeasurementSession[],
   days: number | null
@@ -43,18 +81,15 @@ interface Stats {
 export function computeStats(sessions: MeasurementSession[]): Stats | null {
   if (sessions.length === 0) return null;
   const n = sessions.length;
+  const better = sessions.map((m) => getBetterMeasurement(m));
   return {
-    avgSystolic: Math.round(
-      sessions.reduce((s, m) => s + m.systolicAvg, 0) / n
-    ),
-    avgDiastolic: Math.round(
-      sessions.reduce((s, m) => s + m.diastolicAvg, 0) / n
-    ),
-    avgPulse: Math.round(sessions.reduce((s, m) => s + m.pulseAvg, 0) / n),
-    minSystolic: Math.min(...sessions.map((m) => m.systolicAvg)),
-    maxSystolic: Math.max(...sessions.map((m) => m.systolicAvg)),
-    minDiastolic: Math.min(...sessions.map((m) => m.diastolicAvg)),
-    maxDiastolic: Math.max(...sessions.map((m) => m.diastolicAvg)),
+    avgSystolic: Math.round(better.reduce((s, m) => s + m.systolic, 0) / n),
+    avgDiastolic: Math.round(better.reduce((s, m) => s + m.diastolic, 0) / n),
+    avgPulse: Math.round(better.reduce((s, m) => s + m.pulse, 0) / n),
+    minSystolic: Math.min(...better.map((m) => m.systolic)),
+    maxSystolic: Math.max(...better.map((m) => m.systolic)),
+    minDiastolic: Math.min(...better.map((m) => m.diastolic)),
+    maxDiastolic: Math.max(...better.map((m) => m.diastolic)),
     count: n,
   };
 }
@@ -81,13 +116,22 @@ export function groupByWeek(sessions: MeasurementSession[]): WeeklyData[] {
     weeks.get(key)!.push(s);
   }
 
-  return Array.from(weeks.entries()).map(([week, data]) => ({
-    week,
-    systolic: Math.round(data.reduce((s, m) => s + m.systolicAvg, 0) / data.length),
-    diastolic: Math.round(data.reduce((s, m) => s + m.diastolicAvg, 0) / data.length),
-    pulse: Math.round(data.reduce((s, m) => s + m.pulseAvg, 0) / data.length),
-    count: data.length,
-  }));
+  return Array.from(weeks.entries()).map(([week, data]) => {
+    const better = data.map((m) => getBetterMeasurement(m));
+    return {
+      week,
+      systolic: Math.round(
+        better.reduce((s, m) => s + m.systolic, 0) / better.length
+      ),
+      diastolic: Math.round(
+        better.reduce((s, m) => s + m.diastolic, 0) / better.length
+      ),
+      pulse: Math.round(
+        better.reduce((s, m) => s + m.pulse, 0) / better.length
+      ),
+      count: data.length,
+    };
+  });
 }
 
 export interface MorningEveningData {
@@ -106,19 +150,26 @@ export function computeMorningEvening(
 
   if (morning.length === 0 && evening.length === 0) return null;
 
+  const mBetter = morning.map((m) => getBetterMeasurement(m));
+  const eBetter = evening.map((m) => getBetterMeasurement(m));
+
   return {
     label: "Durchschnitt",
-    morningSys: morning.length
-      ? Math.round(morning.reduce((s, m) => s + m.systolicAvg, 0) / morning.length)
+    morningSys: mBetter.length
+      ? Math.round(mBetter.reduce((s, m) => s + m.systolic, 0) / mBetter.length)
       : 0,
-    morningDia: morning.length
-      ? Math.round(morning.reduce((s, m) => s + m.diastolicAvg, 0) / morning.length)
+    morningDia: mBetter.length
+      ? Math.round(
+          mBetter.reduce((s, m) => s + m.diastolic, 0) / mBetter.length
+        )
       : 0,
-    eveningSys: evening.length
-      ? Math.round(evening.reduce((s, m) => s + m.systolicAvg, 0) / evening.length)
+    eveningSys: eBetter.length
+      ? Math.round(eBetter.reduce((s, m) => s + m.systolic, 0) / eBetter.length)
       : 0,
-    eveningDia: evening.length
-      ? Math.round(evening.reduce((s, m) => s + m.diastolicAvg, 0) / evening.length)
+    eveningDia: eBetter.length
+      ? Math.round(
+          eBetter.reduce((s, m) => s + m.diastolic, 0) / eBetter.length
+        )
       : 0,
   };
 }
@@ -134,9 +185,11 @@ export function computeTrend(
   const newer = sorted.slice(half);
 
   const olderAvg =
-    older.reduce((s, m) => s + m.systolicAvg, 0) / older.length;
+    older.reduce((s, m) => s + getBetterMeasurement(m).systolic, 0) /
+    older.length;
   const newerAvg =
-    newer.reduce((s, m) => s + m.systolicAvg, 0) / newer.length;
+    newer.reduce((s, m) => s + getBetterMeasurement(m).systolic, 0) /
+    newer.length;
 
   const diff = newerAvg - olderAvg;
   if (diff < -3) return "improving";

@@ -1,6 +1,7 @@
 "use client";
 
 import type { MeasurementSession } from "@/lib/types";
+import { getBetterMeasurement } from "@/lib/calculations";
 import { Card, CardContent } from "@/components/ui/card";
 import { getBpCategory, BP_CATEGORIES } from "@/lib/bp-categories";
 import {
@@ -21,19 +22,23 @@ interface DistributionChartProps {
 export function DistributionChart({ sessions }: DistributionChartProps) {
   if (sessions.length === 0) return null;
 
-  const data = sessions.map((s) => ({
-    dia: s.diastolicAvg,
-    sys: s.systolicAvg,
-    date: s.date,
-    time: s.time,
-    fill: getBpCategory(s.systolicAvg, s.diastolicAvg).color,
-  }));
+  const data = sessions.map((s) => {
+    const b = getBetterMeasurement(s);
+    return {
+      dia: b.diastolic,
+      sys: b.systolic,
+      date: s.date,
+      time: s.time,
+      fill: getBpCategory(b.systolic, b.diastolic).color,
+    };
+  });
 
   // Category distribution counts
   const distribution = BP_CATEGORIES.map((cat) => ({
     ...cat,
     count: sessions.filter((s) => {
-      const c = getBpCategory(s.systolicAvg, s.diastolicAvg);
+      const b = getBetterMeasurement(s);
+      const c = getBpCategory(b.systolic, b.diastolic);
       return c.label === cat.label;
     }).length,
   })).filter((c) => c.count > 0);

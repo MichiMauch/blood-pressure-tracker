@@ -74,7 +74,9 @@ export default function ExportPage() {
             <div className="grid grid-cols-2 gap-y-2 text-sm">
               <span className="text-muted-foreground">Messungen</span>
               <span className="font-medium">{stats.count}</span>
-              <span className="text-muted-foreground">Durchschnitt</span>
+              <span className="text-muted-foreground">
+                Mittel (beste Messung)
+              </span>
               <span className="font-bold tabular-nums">
                 {stats.avgSystolic}/{stats.avgDiastolic} mmHg
               </span>

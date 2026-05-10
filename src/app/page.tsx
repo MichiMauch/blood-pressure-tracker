@@ -88,7 +88,7 @@ export default function DashboardPage() {
           <CardContent className="p-4">
             <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
               <Activity className="h-3.5 w-3.5" />
-              7-Tage Schnitt
+              7-Tage Schnitt (beste)
             </div>
             {stats7 ? (
               <p className="text-xl font-bold tabular-nums">

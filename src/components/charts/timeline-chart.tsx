@@ -1,6 +1,7 @@
 "use client";
 
 import type { MeasurementSession } from "@/lib/types";
+import { getBetterMeasurement } from "@/lib/calculations";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   ResponsiveContainer,
@@ -21,13 +22,16 @@ interface TimelineChartProps {
 export function TimelineChart({ sessions }: TimelineChartProps) {
   const data = [...sessions]
     .sort((a, b) => a.timestamp - b.timestamp)
-    .map((s) => ({
-      date: s.date,
-      time: s.time,
-      sys: s.systolicAvg,
-      dia: s.diastolicAvg,
-      pulse: s.pulseAvg,
-    }));
+    .map((s) => {
+      const b = getBetterMeasurement(s);
+      return {
+        date: s.date,
+        time: s.time,
+        sys: b.systolic,
+        dia: b.diastolic,
+        pulse: b.pulse,
+      };
+    });
 
   if (data.length === 0) return null;
 
